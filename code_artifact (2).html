@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>مغامرة الصورة الموسعة في حقول السمسم 🌾</title>
+    <!-- Tailwind CSS for utility styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        sesame: {
+                            50: '#fdfbf7',
+                            100: '#f7f0e1',
+                            300: '#e5ca93',
+                            500: '#d4a340',
+                            600: '#b88228',
+                            700: '#93601d',
+                        },
+                        field: {
+                            50: '#f2f9f1',
+                            100: '#dfedd8',
+                            500: '#529b3c',
+                            600: '#3f7c2d',
+                            700: '#2d5b20',
+                            800: '#1e3d15'
+                        },
+                        teamRed: '#e53935',
+                        teamBlue: '#1e88e5'
+                    },
+                    fontFamily: {
+                        cairo: ['Cairo', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Cairo Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            font-family: 'Cairo', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            background-color: #f7f0e1;
+            background-image: radial-gradient(#d4a340 0.75px, transparent 0.75px), radial-gradient(#529b3c 0.75px, #f7f0e1 0.75px);
+            background-size: 30px 30px;
+            background-position: 0 0, 15px 15px;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Canvas Particle overlay */
+        #fx-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .wooden-card {
+            background: linear-gradient(135deg, #ffffff 0%, #fdfbf7 100%);
+            border: 4px solid #b88228;
+            box-shadow: 0 10px 25px -5px rgba(147, 96, 29, 0.25), inset 0 0 15px rgba(212, 163, 64, 0.1);
+            border-radius: 1.5rem;
+        }
+
+        .btn-bounce {
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.15s ease;
+        }
+        .btn-bounce:active {
+            transform: scale(0.95);
+        }
+
+        /* Spinner Wheel Styling */
+        #wheel-container {
+            position: relative;
+            width: 260px;
+            height: 260px;
+            margin: 0 auto;
+        }
+
+        #wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 8px solid #b88228;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            transition: transform 3.5s cubic-bezier(0.15, 0.99, 0.18, 1);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .wheel-pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 25px solid #e53935;
+            z-index: 20;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+
+        .glow-correct {
+            animation: glowPulse 1s infinite alternate;
+        }
+
+        @keyframes glowPulse {
+            0% { box-shadow: 0 0 5px #529b3c; border-color: #529b3c; }
+            100% { box-shadow: 0 0 25px #529b3c, 0 0 10px #529b3c; border-color: #2d5b20; }
+        }
+
+        .shake-wrong {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f7f0e1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #b88228;
+            border-radius: 10px;
+        }
+
+        /* Modal Overlay */
+        .modal-bg {
+            background-color: rgba(30, 61, 21, 0.75);
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen justify-between items-center p-2 sm:p-4 text-gray-800">
+
+    <!-- Canvas for effects (Confetti / Flowers / Stars) -->
+    <canvas id="fx-canvas"></canvas>
+
+    <!-- Top Navigation & Sound Bar -->
+    <header class="w-full max-w-4xl flex justify-between items-center bg-white/90 backdrop-blur-md p-3 rounded-2xl shadow-md border-2 border-sesame-300 mb-3 z-10">
+        <div class="flex items-center gap-2">
+            <svg class="w-8 h-8 text-field-600" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M11,16.5L6.5,12L7.91,10.59L11,13.67L16.59,8.09L18,9.5L11,16.5Z"/>
+            </svg>
+            <div>
+                <h1 class="text-sm sm:text-lg font-black text-field-700 leading-tight">حقول السمسم 🌾</h1>
+                <p class="text-xs text-sesame-700 font-bold hidden sm:block">مغامرة الصورة الموسعة</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <!-- Audio Toggle -->
+            <button id="sound-btn" onclick="toggleAudio()" class="p-2 bg-sesame-100 hover:bg-sesame-300 text-sesame-700 rounded-xl transition border border-sesame-500 flex items-center gap-1 text-sm font-bold btn-bounce" title="تشغيل/إيقاف الصوت">
+                <span id="sound-icon">🔊</span>
+                <span class="hidden sm:inline">الصوت</span>
+            </button>
+
+            <!-- Wheel Modal Button -->
+            <button onclick="openWheelModal()" class="p-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl shadow-md transition flex items-center gap-1 text-sm font-bold btn-bounce" title="قرص القيم المنزلية">
+                <span>🎡</span>
+                <span class="hidden sm:inline">القرص</span>
+            </button>
+
+            <!-- Teacher Panel Button -->
+            <button onclick="openTeacherAuthModal()" class="p-2 bg-field-600 hover:bg-field-700 text-white rounded-xl shadow-md transition flex items-center gap-1 text-sm font-bold btn-bounce" title="لوحة المعلم">
+                <span>👩‍🏫</span>
+                <span class="hidden sm:inline">المعلم</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="w-full max-w-4xl flex-1 flex flex-col justify-center items-center relative z-10 my-auto">
+
+        <!-- ================= 1. START SCREEN ================= -->
+        <section id="screen-start" class="w-full wooden-card p-5 sm:p-8 text-center flex flex-col items-center">
+            
+            <!-- Palestinian Decorative Header Banner -->
+            <div class="relative w-full mb-4 flex justify-center items-center">
+                <div class="h-2 w-full bg-gradient-to-r from-red-600 via-black to-green-600 absolute top-0 rounded-full"></div>
+                <div class="bg-sesame-100 border-2 border-sesame-500 px-6 py-2 rounded-full mt-2 shadow-inner">
+                    <span class="text-xs sm:text-sm text-field-800 font-extrabold tracking-wide">
+                        🇵🇸 وزارة التربية والتعليم - مدرسة اتحاد كفرزيباد وكفر عبوش الأساسية 🇵🇸
+                    </span>
+                </div>
+            </div>
+
+            <!-- Game Logo Art (SVG Fields & Sesame) -->
+            <div class="w-36 h-36 my-2 relative flex justify-center items-center">
+                <svg class="w-full h-full drop-shadow-md" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="100" cy="100" r="90" fill="#DFEDD8" stroke="#529B3C" stroke-width="6"/>
+                    <!-- Sun -->
+                    <circle cx="150" cy="50" r="20" fill="#FBBF24"/>
+                    <!-- Hills -->
+                    <path d="M10 140 Q 60 110 110 140 T 190 130 L 190 190 L 10 190 Z" fill="#529B3C"/>
+                    <path d="M10 160 Q 80 130 150 160 T 190 150 L 190 190 L 10 190 Z" fill="#3F7C2D"/>
+                    <!-- Sesame Plant / Basket -->
+                    <path d="M70 170 C 70 150, 80 120, 100 100 C 120 120, 130 150, 130 170 Z" fill="#D4A340"/>
+                    <!-- Sesame Seeds -->
+                    <ellipse cx="100" cy="115" rx="4" ry="7" fill="#FFF" transform="rotate(15 100 115)"/>
+                    <ellipse cx="90" cy="130" rx="4" ry="7" fill="#FFF" transform="rotate(-20 90 130)"/>
+                    <ellipse cx="110" cy="130" rx="4" ry="7" fill="#FFF" transform="rotate(25 110 130)"/>
+                    <!-- Olive Branch detail -->
+                    <path d="M50 130 Q 70 120 80 140" stroke="#1E3D15" stroke-width="4" stroke-linecap="round"/>
+                    <ellipse cx="60" cy="123" rx="5" ry="8" fill="#2D5B20" transform="rotate(-30 60 123)"/>
+                    <ellipse cx="72" cy="128" rx="5" ry="8" fill="#2D5B20" transform="rotate(40 72 128)"/>
+                </svg>
+            </div>
+
+            <h2 class="text-2xl sm:text-4xl font-black text-field-700 mb-1 leading-snug">
+                🌾 مغامرة الصورة الموسعة 🌾
+            </h2>
+            <p class="text-sesame-700 text-base sm:text-lg font-bold mb-6">
+                هيا نكتشف قيمة كل رقم في العدد في حقول القرية الجميلة!
+            </p>
+
+            <!-- Input Fields -->
+            <div class="w-full max-w-md space-y-4 mb-6 text-right">
+                <div>
+                    <label class="block text-sm font-extrabold text-gray-700 mb-1">👤 اسم الطالب / الطالبة (مطلوب):</label>
+                    <input type="text" id="input-student-name" placeholder="أدخل اسمك البطل هنا..." 
+                        class="w-full px-4 py-3 border-2 border-sesame-500 rounded-xl focus:ring-4 focus:ring-sesame-300 focus:outline-none font-bold text-lg text-field-800 bg-white">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">👩‍🏫 اسم المعلم/ـة:</label>
+                        <input type="text" id="input-teacher-name" value="منار غنيم" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 font-bold text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">🏫 المدرسة:</label>
+                        <input type="text" id="input-school-name" value="اتحاد كفرزيباد وكفر عبوش الأساسية" readonly
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 font-bold text-xs truncate">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Start Game Button -->
+            <button onclick="startGame()" class="w-full max-w-md bg-gradient-to-r from-amber-500 to-sesame-600 hover:from-amber-600 hover:to-sesame-700 text-white font-black text-xl py-4 rounded-2xl shadow-xl transition transform btn-bounce border-2 border-amber-300 flex justify-center items-center gap-2">
+                <span>🚀</span>
+                <span>ابدأ المغامرة الآن</span>
+            </button>
+
+            <p id="start-error-msg" class="text-red-600 font-bold mt-2 hidden text-sm">⚠️ يرجى كتابة اسم الطالب أولاً لبدء المغامرة!</p>
+
+        </section>
+
+        <!-- ================= 2. GAMEPLAY SCREEN ================= -->
+        <section id="screen-game" class="w-full wooden-card p-4 sm:p-6 hidden flex flex-col gap-4">
+            
+            <!-- Top HUD Bar -->
+            <div class="flex flex-wrap justify-between items-center bg-sesame-100/80 p-3 rounded-xl border border-sesame-300 gap-2">
+                <!-- Progress & Question Tracker -->
+                <div class="flex-1 min-w-[180px]">
+                    <div class="flex justify-between items-center mb-1">
+                        <span id="question-tracker-text" class="text-xs sm:text-sm font-black text-field-800">السؤال ١ من ١٠</span>
+                        <span id="progress-percent" class="text-xs font-bold text-sesame-700">١٠%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 h-3 rounded-full overflow-hidden border border-sesame-300">
+                        <div id="progress-bar-fill" class="bg-gradient-to-r from-field-500 to-amber-500 h-full transition-all duration-500" style="width: 10%;"></div>
+                    </div>
+                </div>
+
+                <!-- Stats Badges -->
+                <div class="flex items-center gap-2 text-xs sm:text-sm font-black">
+                    <div class="bg-white px-3 py-1.5 rounded-lg border border-amber-400 text-amber-800 shadow-sm flex items-center gap-1">
+                        <span>⭐ Points:</span>
+                        <span id="hud-score" class="text-base text-amber-600">٠</span>
+                    </div>
+                    <div class="bg-white px-3 py-1.5 rounded-lg border border-green-400 text-green-800 shadow-sm flex items-center gap-1">
+                        <span>✅</span>
+                        <span id="hud-correct" class="text-base text-green-700">٠</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Motivational Teams (Visual Display Cards) -->
+            <div class="grid grid-cols-2 gap-2 my-1">
+                <div class="bg-blue-50 border-2 border-teamBlue rounded-xl p-2 text-center text-teamBlue font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1 shadow-sm">
+                    <span>🔵</span>
+                    <span>فريق سنابل القمح</span>
+                </div>
+                <div class="bg-red-50 border-2 border-teamRed rounded-xl p-2 text-center text-teamRed font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1 shadow-sm">
+                    <span>🔴</span>
+                    <span>فريق زهور السمسم</span>
+                </div>
+            </div>
+
+            <!-- Question Box -->
+            <div class="bg-white border-2 border-field-500 rounded-2xl p-4 sm:p-6 shadow-md text-center relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-field-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl">
+                    سؤال القيمة المنزلية
+                </div>
+
+                <!-- Question SVG Illustration Placeholder -->
+                <div id="question-illustration" class="w-full max-w-[200px] h-28 mx-auto my-2 flex items-center justify-center">
+                    <!-- SVG populated dynamically by JS -->
+                </div>
+
+                <!-- Story Context -->
+                <p id="question-story" class="text-gray-700 text-sm sm:text-base font-bold mb-2">
+                    <!-- Story text -->
+                </p>
+
+                <!-- The Target Number Banner -->
+                <div class="inline-block bg-sesame-100 border-2 border-sesame-500 px-6 py-2 rounded-2xl my-2 shadow-inner">
+                    <span class="text-xs font-bold text-sesame-700 block">العدد المطلـوب:</span>
+                    <span id="target-number-display" class="text-3xl sm:text-5xl font-black text-field-800 tracking-wider">
+                        ٢٤٧٨
+                    </span>
+                </div>
+
+                <!-- Main Prompt -->
+                <h3 id="question-prompt" class="text-base sm:text-xl font-black text-gray-800 mt-2">
+                    ما هي الصورة الموسعة الصحيحة لهذا العدد؟
+                </h3>
+            </div>
+
+            <!-- Answer Options Grid (4 Options) -->
+            <div id="options-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3 my-2">
+                <!-- Buttons rendered dynamically -->
+            </div>
+
+            <!-- Instant Feedback Message Box -->
+            <div id="feedback-box" class="hidden p-4 rounded-xl text-center font-black text-base sm:text-lg transition-all transform duration-300">
+                <p id="feedback-text"></p>
+                <p id="feedback-subtext" class="text-xs sm:text-sm font-bold mt-1 text-gray-700"></p>
+            </div>
+
+            <!-- Action Button Area (Next Question) -->
+            <div class="flex justify-end mt-1">
+                <button id="next-btn" onclick="nextQuestion()" class="hidden bg-field-600 hover:bg-field-700 text-white font-black px-6 py-3 rounded-xl shadow-lg transition btn-bounce items-center gap-2 text-base">
+                    <span>السؤال التالي</span>
+                    <span>⬅️</span>
+                </button>
+            </div>
+
+        </section>
+
+        <!-- ================= 3. END GAME / RESULTS SCREEN ================= -->
+        <section id="screen-result" class="w-full wooden-card p-6 text-center hidden flex-col items-center">
+            
+            <div class="text-5xl mb-2">🎉🏆🎉</div>
+            <h2 class="text-2xl sm:text-4xl font-black text-field-700 mb-1">مبروك يا بطل القيمة المنزلية!</h2>
+            <p class="text-sesame-700 font-bold text-base sm:text-lg mb-4">لقد أكملت مغامرة الصورة الموسعة في حقول السمسم بنجاح!</p>
+
+            <!-- Results Summary Card -->
+            <div class="w-full max-w-md bg-white border-2 border-sesame-500 rounded-2xl p-5 shadow-inner space-y-3 text-right mb-6">
+                <div class="flex justify-between items-center border-b pb-2">
+                    <span class="font-bold text-gray-600 text-sm">👤 اسم الطالب:</span>
+                    <span id="res-student-name" class="font-black text-field-800 text-lg">---</span>
+                </div>
+                <div class="flex justify-between items-center border-b pb-2">
+                    <span class="font-bold text-gray-600 text-sm">⭐ مجموع النقاط:</span>
+                    <span id="res-score" class="font-black text-amber-600 text-xl">٠</span>
+                </div>
+                <div class="flex justify-between items-center border-b pb-2">
+                    <span class="font-bold text-gray-600 text-sm">✅ الإجابات الصحيحة:</span>
+                    <span id="res-correct" class="font-black text-green-600 text-lg">٠ من ١٠</span>
+                </div>
+                <div class="flex justify-between items-center border-b pb-2">
+                    <span class="font-bold text-gray-600 text-sm">📊 نسبة الإنجاز:</span>
+                    <span id="res-percentage" class="font-black text-blue-600 text-lg">٠%</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="font-bold text-gray-600 text-sm">⏱️ زمن اللعب:</span>
+                    <span id="res-time" class="font-bold text-gray-700 text-sm">٠0:00</span>
+                </div>
+            </div>
+
+            <!-- Qualitative Badge / Motivational Message -->
+            <div id="qualitative-badge" class="w-full max-w-md p-4 rounded-xl bg-sesame-100 border border-sesame-500 font-black text-field-800 text-center mb-6 shadow-sm">
+                <!-- Set by JS -->
+            </div>
+
+            <!-- Buttons Grid -->
+            <div class="flex flex-wrap justify-center gap-3 w-full max-w-md">
+                <button onclick="restartGame()" class="flex-1 bg-gradient-to-r from-amber-500 to-sesame-600 text-white font-black py-3 px-4 rounded-xl shadow-md btn-bounce text-base">
+                    🔄 إعـادة اللعب
+                </button>
+                <button onclick="openTeacherAuthModal()" class="flex-1 bg-field-600 text-white font-black py-3 px-4 rounded-xl shadow-md btn-bounce text-base">
+                    👩‍🏫 لوحة المعلم
+                </button>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ================= MODALS & OVERLAYS ================= -->
+
+    <!-- 1. SPINNER WHEEL MODAL (🎡) -->
+    <div id="modal-wheel" class="fixed inset-0 z-50 modal-bg hidden flex justify-center items-center p-4">
+        <div class="wooden-card w-full max-w-md p-6 text-center relative flex flex-col items-center">
+            <button onclick="closeWheelModal()" class="absolute top-3 left-3 bg-red-500 text-white w-8 h-8 rounded-full font-bold shadow-md hover:bg-red-600">✕</button>
+
+            <h3 class="text-2xl font-black text-field-700 mb-1">🎡 قرص القيم المنزلية</h3>
+            <p class="text-xs text-sesame-700 font-bold mb-4">أدر القرص لتكتشف مفاجأة المنزلة وتستحضر قيمتها!</p>
+
+            <div id="wheel-container">
+                <div class="wheel-pointer"></div>
+                <div id="wheel" style="transform: rotate(0deg);">
+                    <!-- 4 Segments SVGs / CSS Gradient representation -->
+                    <div class="w-full h-full relative">
+                        <!-- Segment 1: Ones -->
+                        <div class="absolute inset-0 bg-red-400 text-white font-black text-sm flex items-center justify-center pt-4" style="clip-path: polygon(50% 50%, 0 0, 100% 0);">
+                            آحــاد
+                        </div>
+                        <!-- Segment 2: Tens -->
+                        <div class="absolute inset-0 bg-blue-400 text-white font-black text-sm flex items-center justify-center pr-4" style="clip-path: polygon(50% 50%, 100% 0, 100% 100%);">
+                            عشـرات
+                        </div>
+                        <!-- Segment 3: Hundreds -->
+                        <div class="absolute inset-0 bg-green-500 text-white font-black text-sm flex items-center justify-center pb-4" style="clip-path: polygon(50% 50%, 100% 100%, 0 100%);">
+                            مئــات
+                        </div>
+                        <!-- Segment 4: Thousands -->
+                        <div class="absolute inset-0 bg-amber-500 text-white font-black text-sm flex items-center justify-center pl-4" style="clip-path: polygon(50% 50%, 0 100%, 0 0);">
+                            آلــاف
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Result Box -->
+            <div id="wheel-result-box" class="my-4 p-3 bg-white border border-sesame-400 rounded-xl w-full min-h-[60px] flex items-center justify-center text-sm font-bold text-gray-800">
+                اضغط على الزر أدناه لإدارة القرص!
+            </div>
+
+            <button id="spin-btn" onclick="spinWheel()" class="bg-gradient-to-r from-amber-500 to-sesame-600 hover:from-amber-600 hover:to-sesame-700 text-white font-black px-6 py-3 rounded-xl shadow-lg transition btn-bounce text-base">
+                🎡 أدر القـرص الآن
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. TEACHER AUTH MODAL -->
+    <div id="modal-teacher-auth" class="fixed inset-0 z-50 modal-bg hidden flex justify-center items-center p-4">
+        <div class="wooden-card w-full max-w-sm p-6 text-center relative">
+            <button onclick="closeTeacherAuthModal()" class="absolute top-3 left-3 bg-red-500 text-white w-8 h-8 rounded-full font-bold shadow-md hover:bg-red-600">✕</button>
+
+            <div class="text-4xl mb-2">🔒</div>
+            <h3 class="text-xl font-black text-field-700 mb-2">دخول لوحة المعلم</h3>
+            <p class="text-xs text-gray-600 font-bold mb-4">أدخل كلمة المرور الخاصة بالمعلمة (١٢٣٤):</p>
+
+            <input type="password" id="input-teacher-pass" placeholder="كلمة المرور" 
+                class="w-full text-center px-4 py-2 border-2 border-sesame-500 rounded-xl mb-3 text-lg font-bold focus:outline-none">
+
+            <p id="auth-error" class="text-red-600 text-xs font-bold mb-3 hidden">❌ كلمة المرور غير صحيحة!</p>
+
+            <button onclick="verifyTeacherPass()" class="w-full bg-field-600 hover:bg-field-700 text-white font-black py-2.5 rounded-xl shadow btn-bounce">
+                دخول اللوحة
+            </button>
+        </div>
+    </div>
+
+    <!-- 3. TEACHER DASHBOARD PANEL MODAL -->
+    <div id="modal-teacher-panel" class="fixed inset-0 z-50 modal-bg hidden flex justify-center items-center p-4">
+        <div class="wooden-card w-full max-w-2xl p-5 text-right relative max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center border-b border-sesame-300 pb-3 mb-3">
+                <h3 class="text-xl font-black text-field-800 flex items-center gap-2">
+                    <span>👩‍🏫</span>
+                    <span>لوحة متابعة المعلم - التقرير الشامل</span>
+                </h3>
+                <button onclick="closeTeacherPanel()" class="bg-red-500 text-white w-8 h-8 rounded-full font-bold hover:bg-red-600">✕</button>
+            </div>
+
+            <!-- Content Area -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-4 text-sm font-bold text-gray-700">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-sesame-50 p-3 rounded-xl border border-sesame-300">
+                    <div>👤 <strong>اسم الطالب:</strong> <span id="tp-student" class="text-field-800 font-black">---</span></div>
+                    <div>👩‍🏫 <strong>المعلم/ـة:</strong> <span id="tp-teacher" class="text-field-800 font-black">---</span></div>
+                    <div class="col-span-1 sm:col-span-2">🏫 <strong>المدرسة:</strong> <span id="tp-school" class="text-field-800 font-black">---</span></div>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                    <div class="bg-amber-50 p-3 rounded-xl border border-amber-300">
+                        <div class="text-xs text-amber-800">مجموع النقاط</div>
+                        <div id="tp-score" class="text-xl font-black text-amber-600">٠</div>
+                    </div>
+                    <div class="bg-green-50 p-3 rounded-xl border border-green-300">
+                        <div class="text-xs text-green-800">إجابات صحيحة</div>
+                        <div id="tp-correct" class="text-xl font-black text-green-600">٠</div>
+                    </div>
+                    <div class="bg-red-50 p-3 rounded-xl border border-red-300">
+                        <div class="text-xs text-red-800">محاولات خاطئة</div>
+                        <div id="tp-wrong" class="text-xl font-black text-red-600">٠</div>
+                    </div>
+                    <div class="bg-blue-50 p-3 rounded-xl border border-blue-300">
+                        <div class="text-xs text-blue-800">نسبة الإنجاز</div>
+                        <div id="tp-percent" class="text-xl font-black text-blue-600">٠%</div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-3 rounded-xl border border-gray-200 space-y-1 text-xs">
+                    <div>⏱️ <strong>زمن اللعب الكلي:</strong> <span id="tp-time">٠ ثانية</span></div>
+                    <div>📚 <strong>مستوى الأداء:</strong> <span id="tp-level" class="font-black text-field-700">غير مكتمل</span></div>
+                </div>
+            </div>
+
+            <!-- Footer Controls -->
+            <div class="border-t border-sesame-300 pt-3 mt-3 flex flex-wrap gap-2 justify-end">
+                <button onclick="resetGameData()" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded-xl text-xs btn-bounce">
+                    🗑️ مسح النتيجة
+                </button>
+                <button onclick="closeTeacherPanel(); restartGame();" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2 rounded-xl text-xs btn-bounce">
+                    🔄 إعادة اللعبة
+                </button>
+                <button onclick="closeTeacherPanel()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold px-4 py-2 rounded-xl text-xs btn-bounce">
+                    ⬅️ العودة للعبة
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER & LICENSE SECTION -->
+    <footer class="w-full max-w-4xl text-center my-3 text-xs text-sesame-700 font-extrabold relative z-10 bg-white/60 p-2.5 rounded-xl border border-sesame-200 shadow-sm">
+        <div class="flex flex-wrap justify-center items-center gap-x-4 gap-y-1">
+            <span>© لعبة تعليمية من إعداد: <strong class="text-field-800">منار غنيم</strong></span>
+            <span>|</span>
+            <span>المدرسة: <strong class="text-field-800">اتحاد كفرزيباد وكفر عبوش الأساسية</strong></span>
+        </div>
+        <div class="mt-1 flex justify-center items-center gap-1 text-[11px] text-gray-600">
+            <span>الترخيص: CC BY-NC-SA 4.0</span>
+            <span class="inline-block bg-gray-200 text-gray-800 px-1.5 py-0.5 rounded font-mono font-bold">CC-BY-NC-SA</span>
+            <span>- يتاح الاستخدام والأغراض التعليمية غير التجارية.</span>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+
+        // Helper: Convert English digits to Eastern Arabic (Hindi) digits
+        function toHindiDigits(str) {
+            if (str === null || str === undefined) return '';
+            const hindiDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+            return str.toString().replace(/[0-9]/g, function (w) {
+                return hindiDigits[parseInt(w)];
+            });
+        }
+
+        // Helper: Convert Hindi digits to English digits for logic processing
+        function toEnglishDigits(str) {
+            if (!str) return '';
+            return str.replace(/[٠-٩]/g, function (d) {
+                return d.charCodeAt(0) - 1632;
+            });
+        }
+
+        // Web Audio Synthesizer (No external audio files required)
+        let audioEnabled = true;
+        let audioCtx = null;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    audioCtx = new AudioContext();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            document.getElementById('sound-icon').innerText = audioEnabled ? '🔊' : '🔇';
+        }
+
+        function playSound(type) {
+            if (!audioEnabled) return;
+            const ctx = getAudioContext();
+            if (!ctx) return;
+
+            try {
+                if (type === 'correct') {
+                    // Success Melodic Chime
+                    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                    notes.forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.value = freq;
+                        gain.gain.setValueAtTime(0.15, ctx.currentTime + idx * 0.08);
+                        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.08 + 0.3);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(ctx.currentTime + idx * 0.08);
+                        osc.stop(ctx.currentTime + idx * 0.08 + 0.3);
+                    });
+                } else if (type === 'wrong') {
+                    // Gentle Error Buzz
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(110, ctx.currentTime + 0.25);
+                    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.25);
+                } else if (type === 'spin') {
+                    // Click sound for wheel
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = 400;
+                    gain.gain.setValueAtTime(0.05, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.05);
+                } else if (type === 'win') {
+                    // Fanfare
+                    [440, 554.37, 659.25, 880].forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.value = freq;
+                        gain.gain.setValueAtTime(0.2, ctx.currentTime + idx * 0.12);
+                        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.12 + 0.5);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(ctx.currentTime + idx * 0.12);
+                        osc.stop(ctx.currentTime + idx * 0.12 + 0.5);
+                    });
+                }
+            } catch (e) {
+                console.log("Audio play error", e);
+            }
+        }
+
+        // Comprehensive 10 Question Bank with Palestinian Context & Civic Values
+        const questionsData = [
+            {
+                id: 1,
+                story: "في أحد حقول السمسم الجميلة، جَمَعَ الطلاب والمتطوعون ٢٤٧٨ حبة سمسم في سِلال المحصول.",
+                number: "٢٤٧٨",
+                prompt: "ما هي الصورة الموسعة الصحيحة للعدد ٢٤٧٨؟",
+                correct: "٢٠٠٠ + ٤٠٠ + ٧٠ + ٨",
+                distractors: [
+                    "٢ + ٤٠ + ٧٠٠ + ٨٠٠٠",
+                    "٢٠٠٠ + ٤٠ + ٧٠٠ + ٨",
+                    "٢٠٠ + ٤٠٠٠ + ٧٠ + ٨"
+                ],
+                explanation: "العدد ٢٤٧٨ يتكون من: ٨ آحاد (٨) + ٧ عشرات (٧٠) + ٤ مئات (٤٠٠) + ٢ آلاف (٢٠٠٠).",
+                svgType: "sesame-basket"
+            },
+            {
+                id: 2,
+                story: "تُعزّز مدرسة اتحاد كفرزيباد وكفر عبوش التعاون؛ فقام الطلاب بغرس ٣٥٢٦ شتلة زيتون لحماية الأرض.",
+                number: "٣٥٢٦",
+                prompt: "اختر الصورة الموسعة للعدد ٣٥٢٦:",
+                correct: "٣٠٠٠ + ٥٠٠ + ٢٠ + ٦",
+                distractors: [
+                    "٣٠٠ + ٥٠٠٠ + ٢٠ + ٦",
+                    "٣٠ + ٥٠٠ + ٢٠٠٠ + ٦",
+                    "٣٠٠٠ + ٥٠ + ٢٠٠ + ٦"
+                ],
+                explanation: "العدد ٣٥٢٦ = ٦ آحاد (٦) + ٢ عشرات (٢٠) + ٥ مئات (٥٠٠) + ٣ آلاف (٣٠٠٠).",
+                svgType: "olive-tree"
+            },
+            {
+                id: 3,
+                story: "التركيز على منازل الأعداد مع وجود الصفر! قطف المزارع ٤٠٣٧ كجم من السمسم الناصع.",
+                number: "٤٠٣٧",
+                prompt: "ما الصورة الموسعة الصحيحة للعدد ٤٠٣٧ مع الانتباه لمنزلة المئات؟",
+                correct: "٤٠٠٠ + ٠ + ٣٠ + ٧",
+                distractors: [
+                    "٤٠٠ + ٣٠ + ٧",
+                    "٤٠٠٠ + ٣٠٠ + ٧",
+                    "٤٠٠٠ + ٣٠٠ + ٧٠"
+                ],
+                explanation: "في العدد ٤٠٣٧: منزلة المئات تحتوي على الصفر (٠)، لذا الصورة الموسعة هي: ٤٠٠٠ + ٠ + ٣٠ + ٧.",
+                svgType: "field"
+            },
+            {
+                id: 4,
+                story: "سؤال تفكير وتأمل: أي عدد من الأعداد التالية يطابق الصورة الموسعة: ٥٠٠٠ + ٦٠٠ + ٠ + ٩؟",
+                number: "٥٦٠٩",
+                prompt: "حدد العدد الصحيح الناتج عن الصورة الموسعة أعلاه:",
+                correct: "٥٦٠٩",
+                distractors: [
+                    "٥٦٩٠",
+                    "٥٠٦٩",
+                    "٦٥٠٩"
+                ],
+                explanation: "٥٠٠٠ (آلاف) + ٦٠٠ (مئات) + ٠ (عشرات) + ٩ (آحاد) يُشكل العدد ٥٦٠٩.",
+                svgType: "thinking"
+            },
+            {
+                id: 5,
+                story: "في مبادرة حديقة القرية، وزّع الأهالي ٧٠٤٨ بَذْرَة زهور ملونة لزيادة جمال البيئة.",
+                number: "٧٠٤٨",
+                prompt: "اختر الصورة الموسعة الدقيقة للعدد ٧٠٤٨:",
+                correct: "٧٠٠٠ + ٠ + ٤٠ + ٨",
+                distractors: [
+                    "٧٠٠ + ٤٠ + ٨",
+                    "٧٠٠٠ + ٤٠٠ + ٨",
+                    "٧٠ + ٤٠٠ + ٨٠٠٠"
+                ],
+                explanation: "العدد ٧٠٤٨ يحتوي على صفر في المئات: ٨ آحاد + ٤٠ عشرات + ٠ مئات + ٧٠٠٠ آلاف.",
+                svgType: "flower"
+            },
+            {
+                id: 6,
+                story: "ما قيمة الرقم ٨ في العدد ٨٣١٥ المستخرج من سجلات محصول الزيتون؟",
+                number: "٨٣١٥",
+                prompt: "اختر العبارة والمنزلة التي توضح قيمة الرقم ٨ في العدد ٨٣١٥:",
+                correct: "قيمته ٨٠٠٠ لأنه في منزلة الآلاف",
+                distractors: [
+                    "قيمته ٨٠٠ لأنه في منزلة المئات",
+                    "قيمته ٨٠ لأنه في منزلة العشرات",
+                    "قيمته ٨ لأنه في منزلة الآحاد"
+                ],
+                explanation: "الرقم ٨ يقع في أول منزلة من اليسار وهي الآلاف، وقيمته المنزلية ٨٠٠٠.",
+                svgType: "thinking"
+            },
+            {
+                id: 7,
+                story: "تعاون أفراد المجتمع المحلي في بناء ١٢٤٥ مترًا من السياج لحماية الحقول الزراعية.",
+                number: "١٢٤٥",
+                prompt: "الصورة الموسعة للعدد ١٢٤٥ هي:",
+                correct: "١٠٠٠ + ٢٠٠ + ٤٠ + ٥",
+                distractors: [
+                    "١٠٠ + ٢٠٠٠ + ٤٠ + ٥",
+                    "١٠٠٠ + ٤٠٠ + ٢٠ + ٥",
+                    "١٠ + ٢٠ + ٤٠ + ٥٠٠"
+                ],
+                explanation: "١٢٤٥ = ٥ + ٤٠ + ٢٠٠ + ١٠٠٠.",
+                svgType: "village"
+            },
+            {
+                id: 8,
+                story: "اكتشف الطالب الذكي خطأً في كتابة الصورة الموسعة للعدد ٩٢٠٦.",
+                number: "٩٢٠٦",
+                prompt: "ما هي الصورة الموسعة السليمة والخالية من الأخطاء للعدد ٩٢٠٦؟",
+                correct: "٩٠٠٠ + ٢٠٠ + ٠ + ٦",
+                distractors: [
+                    "٩٠٠٠ + ٦٠ + ٢",
+                    "٩٠٠ + ٢٠ + ٦",
+                    "٩٠٠٠ + ٢٠ + ٦٠"
+                ],
+                explanation: "منزلة العشرات بها الصفر (٠)، فتصبح: ٩٠٠٠ + ٢٠٠ + ٠ + ٦.",
+                svgType: "thinking"
+            },
+            {
+                id: 9,
+                story: "شَارَكَ ٦٣٩١ طالباً في حملة 'أرضنا الخضراء' الوطنية لتنظيف وترتيب البيئة المدرسية.",
+                number: "٦٣٩١",
+                prompt: "ما الصورة الموسعة للعدد ٦٣٩١؟",
+                correct: "٦٠٠٠ + ٣٠٠ + ٩٠ + ١",
+                distractors: [
+                    "٦٠٠ + ٣٠٠٠ + ٩٠ + ١",
+                    "٦٠٠٠ + ٩٠٠ + ٣٠ + ١",
+                    "٦٠ + ٣٠ + ٩٠٠ + ١٠٠٠"
+                ],
+                explanation: "٦٣٩١ = ١ آحاد + ٩٠ عشرات + ٣٠٠ مئات + ٦٠٠٠ آلاف.",
+                svgType: "sesame-basket"
+            },
+            {
+                id: 10,
+                story: "السؤال الختامي الشامل: تجمع في المخزن ٩٩٩٩ كيسًا من محاصيل القرية المعطاءة.",
+                number: "٩٩٩٩",
+                prompt: "الصورة الموسعة الصحيحة لأكبر عدد مكون من ٤ منازل (٩٩٩٩) هي:",
+                correct: "٩٠٠٠ + ٩٠٠ + ٩٠ + ٩",
+                distractors: [
+                    "٩٠٠ + ٩٠ + ٩",
+                    "٩٠٠٠ + ٩٠ + ٩",
+                    "٩٠٠٠٠ + ٩٠٠ + ٩"
+                ],
+                explanation: "العدد ٩٩٩٩ = ٩ + ٩٠ + ٩٠٠ + ٩٠٠٠.",
+                svgType: "field"
+            }
+        ];
+
+        let gameState = {
+            studentName: '',
+            teacherName: 'منار غنيم',
+            schoolName: 'اتحاد كفرزيباد وكفر عبوش الأساسية',
+            currentQuestionIdx: 0,
+            score: 0,
+            correctCount: 0,
+            wrongAttempts: 0,
+            attemptsForCurrent: 0,
+            startTime: null,
+            endTime: null,
+            answeredQuestions: []
+        };
+
+        // Render SVG Vector Art dynamically based on question topic
+        function renderQuestionSVG(type) {
+            if (type === 'sesame-basket') {
+                return `<svg class="w-24 h-24 stroke-current text-sesame-600 drop-shadow" viewBox="0 0 100 100" fill="none">
+                    <path d="M20 40 L30 80 Q50 90 70 80 L80 40 Z" fill="#D4A340" stroke="#93601D" stroke-width="3"/>
+                    <path d="M15 40 Q50 30 85 40 Q50 50 15 40 Z" fill="#E5CA93" stroke="#93601D" stroke-width="3"/>
+                    <ellipse cx="45" cy="38" rx="3" ry="5" fill="#FFF"/>
+                    <ellipse cx="55" cy="37" rx="3" ry="5" fill="#FFF"/>
+                    <ellipse cx="50" cy="42" rx="3" ry="5" fill="#FFF"/>
+                </svg>`;
+            } else if (type === 'olive-tree') {
+                return `<svg class="w-24 h-24 drop-shadow" viewBox="0 0 100 100">
+                    <path d="M45 90 L45 60 Q40 50 50 40 L55 90 Z" fill="#93601D"/>
+                    <circle cx="50" cy="40" r="30" fill="#529B3C"/>
+                    <circle cx="35" cy="35" r="5" fill="#1E3D15"/>
+                    <circle cx="60" cy="45" r="5" fill="#1E3D15"/>
+                </svg>`;
+            } else if (type === 'thinking') {
+                return `<svg class="w-20 h-20 text-amber-500 animate-bounce" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2A10 10 0 0 0 2 12A10 10 0 0 0 12 22A10 10 0 0 0 22 12A10 10 0 0 0 12 2M12 20A8 8 0 0 1 4 12A8 8 0 0 1 12 4A8 8 0 0 1 20 12A8 8 0 0 1 12 20M13 17H11V15H13V17M13 13H11V7H13V13Z"/>
+                </svg>`;
+            } else if (type === 'flower') {
+                return `<svg class="w-24 h-24 drop-shadow" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="12" fill="#FBBF24"/>
+                    <circle cx="50" cy="25" r="12" fill="#E53935"/>
+                    <circle cx="50" cy="75" r="12" fill="#E53935"/>
+                    <circle cx="25" cy="50" r="12" fill="#E53935"/>
+                    <circle cx="75" cy="50" r="12" fill="#E53935"/>
+                </svg>`;
+            } else {
+                // Village / Field default
+                return `<svg class="w-24 h-24 drop-shadow" viewBox="0 0 100 100">
+                    <path d="M10 80 Q50 60 90 80 L90 95 L10 95 Z" fill="#529B3C"/>
+                    <path d="M30 65 L50 45 L70 65 L70 80 L30 80 Z" fill="#D4A340"/>
+                    <polygon points="50,35 25,65 75,65" fill="#E53935"/>
+                </svg>`;
+            }
+        }
+
+
+        function startGame() {
+            const studentInput = document.getElementById('input-student-name').value.trim();
+            const teacherInput = document.getElementById('input-teacher-name').value.trim();
+            const schoolInput = document.getElementById('input-school-name').value.trim();
+
+            if (!studentInput) {
+                document.getElementById('start-error-msg').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('start-error-msg').classList.add('hidden');
+
+            gameState.studentName = studentInput;
+            gameState.teacherName = teacherInput || 'منار غنيم';
+            gameState.schoolName = schoolInput || 'اتحاد كفرزيباد وكفر عبوش الأساسية';
+            gameState.currentQuestionIdx = 0;
+            gameState.score = 0;
+            gameState.correctCount = 0;
+            gameState.wrongAttempts = 0;
+            gameState.attemptsForCurrent = 0;
+            gameState.startTime = new Date();
+
+            document.getElementById('screen-start').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = questionsData[gameState.currentQuestionIdx];
+            gameState.attemptsForCurrent = 0;
+
+            // Update Progress HUD
+            const total = questionsData.length;
+            const currentNum = gameState.currentQuestionIdx + 1;
+            document.getElementById('question-tracker-text').innerText = `السؤال ${toHindiDigits(currentNum)} من ${toHindiDigits(total)}`;
+            const pct = Math.round((currentNum / total) * 100);
+            document.getElementById('progress-percent').innerText = `${toHindiDigits(pct)}%`;
+            document.getElementById('progress-bar-fill').style.width = `${pct}%`;
+
+            document.getElementById('hud-score').innerText = toHindiDigits(gameState.score);
+            document.getElementById('hud-correct').innerText = toHindiDigits(gameState.correctCount);
+
+            // Render Illustration & Texts
+            document.getElementById('question-illustration').innerHTML = renderQuestionSVG(q.svgType);
+            document.getElementById('question-story').innerText = q.story;
+            document.getElementById('target-number-display').innerText = toHindiDigits(q.number);
+            document.getElementById('question-prompt').innerText = q.prompt;
+
+            // Reset Feedback Box & Next Button
+            const fbBox = document.getElementById('feedback-box');
+            fbBox.className = "hidden p-4 rounded-xl text-center font-black text-base sm:text-lg transition-all transform duration-300";
+            document.getElementById('next-btn').classList.add('hidden');
+
+            // Generate Randomized Options
+            const allOpts = [q.correct, ...q.distractors];
+            // Shuffle array
+            for (let i = allOpts.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allOpts[i], allOpts[j]] = [allOpts[j], allOpts[i]];
+            }
+
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+
+            allOpts.forEach(optText => {
+                const btn = document.createElement('button');
+                btn.className = "w-full bg-white hover:bg-sesame-100 text-gray-800 font-extrabold text-base sm:text-lg p-4 rounded-2xl border-2 border-sesame-400 shadow-md transition transform btn-bounce flex items-center justify-center text-center";
+                btn.innerText = toHindiDigits(optText);
+                btn.onclick = () => checkAnswer(optText, q.correct, btn);
+                container.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedOpt, correctOpt, btnElem) {
+            const fbBox = document.getElementById('feedback-box');
+            const fbText = document.getElementById('feedback-text');
+            const fbSubtext = document.getElementById('feedback-subtext');
+            const q = questionsData[gameState.currentQuestionIdx];
+
+            if (selectedOpt === correctOpt) {
+                // Correct Answer Logic
+                playSound('correct');
+                triggerParticles('correct');
+
+                btnElem.classList.remove('bg-white', 'hover:bg-sesame-100');
+                btnElem.classList.add('bg-green-100', 'border-green-600', 'text-green-900', 'glow-correct');
+
+                // Disable all option buttons
+                const allBtns = document.getElementById('options-container').querySelectorAll('button');
+                allBtns.forEach(b => b.disabled = true);
+
+                // Scoring: +10 on first try, +5 afterwards
+                let pointsEarned = 10;
+                if (gameState.attemptsForCurrent > 0) {
+                    pointsEarned = 5;
+                }
+                gameState.score += pointsEarned;
+                gameState.correctCount++;
+
+                document.getElementById('hud-score').innerText = toHindiDigits(gameState.score);
+                document.getElementById('hud-correct').innerText = toHindiDigits(gameState.correctCount);
+
+                fbBox.classList.remove('hidden', 'bg-red-100', 'text-red-800', 'border-red-400');
+                fbBox.classList.add('bg-green-100', 'text-green-900', 'border-2', 'border-green-500');
+                fbText.innerText = `🎉 أحسنت يا بطل! إجابة صحيحة (+${toHindiDigits(pointsEarned)} نقاط) 🌟`;
+                fbSubtext.innerText = q.explanation;
+
+                document.getElementById('next-btn').classList.remove('hidden');
+                document.getElementById('next-btn').classList.add('flex');
+
+            } else {
+                // Wrong Answer Logic
+                playSound('wrong');
+                gameState.wrongAttempts++;
+                gameState.attemptsForCurrent++;
+
+                btnElem.classList.add('shake-wrong', 'bg-red-50', 'border-red-400', 'text-red-700');
+                setTimeout(() => btnElem.classList.remove('shake-wrong'), 500);
+
+                fbBox.classList.remove('hidden', 'bg-green-100', 'text-green-900', 'border-green-500');
+                fbBox.classList.add('bg-red-100', 'text-red-800', 'border-2', 'border-red-400');
+                fbText.innerText = "🌱 حاول مرة أخرى يا بطل!";
+                fbSubtext.innerText = "فكّر في قيمة كل رقم حسب منزلته (آحاد – عشرات – مئات – آلاف).";
+            }
+        }
+
+        function nextQuestion() {
+            gameState.currentQuestionIdx++;
+            if (gameState.currentQuestionIdx < questionsData.length) {
+                renderQuestion();
+            } else {
+                finishGame();
+            }
+        }
+
+        function finishGame() {
+            gameState.endTime = new Date();
+            playSound('win');
+            triggerParticles('win');
+
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-result').classList.remove('hidden');
+            document.getElementById('screen-result').classList.add('flex');
+
+            const durationSec = Math.round((gameState.endTime - gameState.startTime) / 1000);
+            const mins = Math.floor(durationSec / 60);
+            const secs = durationSec % 60;
+            const timeFormatted = `${toHindiDigits(mins)}:${secs < 10 ? '٠' : ''}${toHindiDigits(secs)}`;
+
+            const percentage = Math.round((gameState.correctCount / questionsData.length) * 100);
+
+            document.getElementById('res-student-name').innerText = gameState.studentName;
+            document.getElementById('res-score').innerText = toHindiDigits(gameState.score);
+            document.getElementById('res-correct').innerText = `${toHindiDigits(gameState.correctCount)} من ${toHindiDigits(questionsData.length)}`;
+            document.getElementById('res-percentage').innerText = `${toHindiDigits(percentage)}%`;
+            document.getElementById('res-time').innerText = timeFormatted;
+
+            const badge = document.getElementById('qualitative-badge');
+            if (percentage >= 80) {
+                badge.innerText = "🌟 رائع جدًا! أنت بطل القيمة المنزلية الحقيقي في حقول القرية!";
+                badge.className = "w-full max-w-md p-4 rounded-xl bg-green-100 border-2 border-green-500 font-black text-green-900 text-center mb-6 shadow-sm";
+            } else if (percentage >= 50) {
+                badge.innerText = "🌱 عمل رائع ومميز! واصل التدريب وستصبح أكثر إتقانًا للقيمة المنزلية!";
+                badge.className = "w-full max-w-md p-4 rounded-xl bg-amber-100 border-2 border-amber-500 font-black text-amber-900 text-center mb-6 shadow-sm";
+            } else {
+                badge.innerText = "💪 أحسنت المحاولة! لنعد ونكتشف منازل الأعداد معًا مرة أخرى.";
+                badge.className = "w-full max-w-md p-4 rounded-xl bg-blue-100 border-2 border-blue-500 font-black text-blue-900 text-center mb-6 shadow-sm";
+            }
+        }
+
+        function restartGame() {
+            document.getElementById('screen-result').classList.add('hidden');
+            document.getElementById('screen-result').classList.remove('flex');
+            document.getElementById('screen-start').classList.remove('hidden');
+        }
+
+
+        let wheelSpinning = false;
+        function openWheelModal() {
+            document.getElementById('modal-wheel').classList.remove('hidden');
+        }
+
+        function closeWheelModal() {
+            document.getElementById('modal-wheel').classList.add('hidden');
+        }
+
+        function spinWheel() {
+            if (wheelSpinning) return;
+            wheelSpinning = true;
+
+            const wheel = document.getElementById('wheel');
+            const resultBox = document.getElementById('wheel-result-box');
+            resultBox.innerText = "القرص يدور الآن... 🎡";
+
+            // Random rotation angle (at least 5 full turns + random segment offset)
+            const extraDegrees = Math.floor(Math.random() * 360);
+            const totalRotation = 1800 + extraDegrees;
+
+            wheel.style.transform = `rotate(${totalRotation}deg)`;
+            playSound('spin');
+
+            setTimeout(() => {
+                wheelSpinning = false;
+                // Determine landed segment based on normalized angle
+                const normalized = (360 - (extraDegrees % 360)) % 360;
+                
+                let placeName = "الآحاد";
+                let tip = "تذكر: الرقم في منزلة الآحاد يمثل الوحدات المنفردة (من ٠ إلى ٩).";
+
+                if (normalized >= 0 && normalized < 90) {
+                    placeName = "منزلة الآحاد 🔴";
+                    tip = "تذكر: الرقم في منزلة الآحاد يمثل وحدات منفردة (مثل: ٨).";
+                } else if (normalized >= 90 && normalized < 180) {
+                    placeName = "منزلة العشرات 🔵";
+                    tip = "تذكر: الرقم في منزلة العشرات يمثل حزم عشرية (مثل: ٧٠).";
+                } else if (normalized >= 180 && normalized < 270) {
+                    placeName = "منزلة المئات 🟢";
+                    tip = "تذكر: الرقم في منزلة المئات يمثل مئات كاملة (مثل: ٤٠٠).";
+                } else {
+                    placeName = "منزلة الآلاف 🟡";
+                    tip = "تذكر: الرقم في منزلة الآلاف يمثل آلافًا كاملة (مثل: ٢٠٠٠).";
+                }
+
+                resultBox.innerHTML = `<div><strong class="text-base text-field-800 block mb-1">${placeName}</strong><span class="text-xs text-gray-700">${tip}</span></div>`;
+                playSound('correct');
+            }, 3500);
+        }
+
+
+        function openTeacherAuthModal() {
+            document.getElementById('input-teacher-pass').value = '';
+            document.getElementById('auth-error').classList.add('hidden');
+            document.getElementById('modal-teacher-auth').classList.remove('hidden');
+        }
+
+        function closeTeacherAuthModal() {
+            document.getElementById('modal-teacher-auth').classList.add('hidden');
+        }
+
+        function verifyTeacherPass() {
+            const rawPass = document.getElementById('input-teacher-pass').value.trim();
+            const engPass = toEnglishDigits(rawPass);
+
+            if (engPass === '1234') {
+                closeTeacherAuthModal();
+                populateTeacherPanel();
+                document.getElementById('modal-teacher-panel').classList.remove('hidden');
+            } else {
+                document.getElementById('auth-error').classList.remove('hidden');
+            }
+        }
+
+        function closeTeacherPanel() {
+            document.getElementById('modal-teacher-panel').classList.add('hidden');
+        }
+
+        function populateTeacherPanel() {
+            document.getElementById('tp-student').innerText = gameState.studentName || 'لم يبدأ بعد';
+            document.getElementById('tp-teacher').innerText = gameState.teacherName;
+            document.getElementById('tp-school').innerText = gameState.schoolName;
+
+            document.getElementById('tp-score').innerText = toHindiDigits(gameState.score);
+            document.getElementById('tp-correct').innerText = `${toHindiDigits(gameState.correctCount)} من ${toHindiDigits(questionsData.length)}`;
+            document.getElementById('tp-wrong').innerText = toHindiDigits(gameState.wrongAttempts);
+
+            const pct = Math.round((gameState.correctCount / questionsData.length) * 100);
+            document.getElementById('tp-percent').innerText = `${toHindiDigits(pct)}%`;
+
+            let timeSec = 0;
+            if (gameState.startTime) {
+                const end = gameState.endTime || new Date();
+                timeSec = Math.round((end - gameState.startTime) / 1000);
+            }
+            document.getElementById('tp-time').innerText = `${toHindiDigits(timeSec)} ثانية`;
+
+            let levelStr = "لم يكتمل الاختبار";
+            if (gameState.currentQuestionIdx >= questionsData.length) {
+                levelStr = pct >= 80 ? "ممتاز جداً 🌟" : (pct >= 50 ? "جيد جداً 🌱" : "يحتاج متابعة 💪");
+            }
+            document.getElementById('tp-level').innerText = levelStr;
+        }
+
+        function resetGameData() {
+            if (confirm("هل أنت تأكد من مسح كافة نتائج وتدريبات الطالب الحالية؟")) {
+                gameState.score = 0;
+                gameState.correctCount = 0;
+                gameState.wrongAttempts = 0;
+                gameState.currentQuestionIdx = 0;
+                populateTeacherPanel();
+                restartGame();
+            }
+        }
+
+
+        const canvas = document.getElementById('fx-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function triggerParticles(type) {
+            particles = [];
+            const count = type === 'win' ? 80 : 35;
+            const colors = ['#529b3c', '#d4a340', '#e53935', '#1e88e5', '#fbbf24'];
+
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 3,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: (Math.random() - 0.7) * 14,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    life: 1,
+                    decay: Math.random() * 0.02 + 0.01,
+                    shape: Math.random() > 0.5 ? 'circle' : 'rect'
+                });
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((p, idx) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.3; // Gravity
+                p.life -= p.decay;
+
+                if (p.life <= 0) {
+                    particles.splice(idx, 1);
+                } else {
+                    ctx.globalAlpha = p.life;
+                    ctx.fillStyle = p.color;
+                    if (p.shape === 'circle') {
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else {
+                        ctx.fillRect(p.x, p.y, p.size, p.size);
+                    }
+                }
+            });
+            requestAnimationFrame(animateParticles);
+        }
+
+        window.onload = function () {
+            animateParticles();
+        };
+    </script>
+</body>
+</html>
